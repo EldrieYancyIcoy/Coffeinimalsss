@@ -1,3 +1,4 @@
+// AuthContext.js
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import {
@@ -69,7 +70,7 @@ export function AuthProvider({ children }) {
     return loggedUser;
   };
 
-  // Update user favorites (add or remove)
+  // 🔹 Update user favorites
   const updateFavorites = async (favorites) => {
     if (!user?.id) return;
     const userRef = doc(db, "users", user.id);
@@ -77,6 +78,23 @@ export function AuthProvider({ children }) {
     const updatedUser = { ...user, favorites };
     setUser(updatedUser);
     await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+  };
+
+  // 🔹 Update user profile (name & email)
+  const updateProfile = async ({ name, email }) => {
+    if (!user?.id) throw new Error("No user logged in");
+
+    const userRef = doc(db, "users", user.id);
+
+    // Update Firestore
+    await updateDoc(userRef, { name, email });
+
+    // Update local state + storage
+    const updatedUser = { ...user, name, email };
+    setUser(updatedUser);
+    await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+
+    return updatedUser;
   };
 
   // Logout
@@ -87,7 +105,16 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, register, login, logout, updateFavorites }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        register,
+        login,
+        logout,
+        updateFavorites,
+        updateProfile, // 👈 make it available
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
